@@ -1,0 +1,25 @@
+rps.py uses regret maching not cfr
+
+normal form (single action) game is a tuple (N,A,u)
+    N is a finite set of players
+    S_i is a finite set of actions for player i
+    A = S_1\times\dots\times S_n is the set of 
+        all possible combinations of simul. actions
+    u a function mapping each action profile
+        to a vector of player utilities
+
+Players can use pure or mixed strategies
+    Let \sigma be a mix strategy with \sigma_i(s)
+        as the probability that player i chooses 
+        action s\in S_i
+    
+-i is notation for player i's opponents
+
+A best response strat for player i maximised expected
+    utility for player i given all opponent's strategies
+    When every player is playing a best response strat
+        the combination of strats is a Nash Equilibrium
+
+Regret is the difference in utility between some action we 
+    could have taken utility of the action we actually took 
+    with respect to the fixed actions of the other players
