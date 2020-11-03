@@ -1,65 +1,81 @@
 import numpy as np
-from random import random
+import matplotlib.pyplot as plt
 
 
 ROCK = 0
 PAPER = 1
 SCISSORS = 2
-NUM_ACTIONS = 3
 
+ACTIONS = np.array([0, 1, 2])
 
 def main():
-    print(getAverageStrategy(train(10000)))
-
-
-def getStrategy(regretSum):
-    strategy = np.maximum(regretSum, 0)
-    normalizingSum = np.sum(strategy)
-    if normalizingSum > 0:
-        strategy /= normalizingSum
-    else:
-        strategy = np.ones(NUM_ACTIONS) / NUM_ACTIONS
-    return strategy
+    n_iter = 10000
     
+    # make vectors to store the strategies and regrets
+    cum_regrets = np.zeros(3)
+    strat_sum = np.zeros(3)
 
-def getAction(strategy):
-    r = random()
-    cumulativeProbability = 0
-    for i, p in enumerate(strategy):
-        cumulativeProbability += p
-        if cumulativeProbability > r:
-            return i
+    opp_strat = np.array([.1, .6, .3])
     
+    vals = []
 
-def train(interations):
-    # ROCK, PAPER, SCISSORS
-    regretSum = np.zeros(NUM_ACTIONS)
-    strategy = np.zeros(NUM_ACTIONS)
-    strategySum = np.zeros(NUM_ACTIONS)
-    oppStrategy = np.array([0.4, 0.3, 0.3])
-    oppStrategy = np.ones(NUM_ACTIONS) / NUM_ACTIONS
+    # main loop
+    for i in range(n_iter):
+        strat = getStrategy(cum_regrets)
+        strat_sum += strat
 
-    actionUtility = np.zeros(NUM_ACTIONS)
-    for i in range(interations):
-        strategy = getStrategy(regretSum)
-        strategySum += strategy
+        action = np.random.choice(ACTIONS, p=strat)
+        opp_action = np.random.choice(ACTIONS, p=opp_strat)
 
-        myAction = getAction(strategy)
-        otherAction = getAction(oppStrategy)
-        
-        actionUtility[otherAction] = 0
-        actionUtility[(otherAction + 1) % NUM_ACTIONS] = 1
-        actionUtility[(otherAction - 1) % NUM_ACTIONS] = -1
+        payoff = getPayoff(action, opp_action)
+        cum_regrets += getRegrets(payoff, opp_action)
 
-        regretSum += actionUtility - actionUtility[myAction]
+        vals.append(getValue(strat_sum / (i+1), opp_strat))
 
-    #print(regretSum, strategySum)
-    return strategySum
+    # output
+    print(strat_sum / n_iter)
+
+    # plot
+    plt.plot(list(range(n_iter)), vals)
+    plt.show()
 
 
-def getAverageStrategy(strategySum):
-    return strategySum / np.sum(strategySum)
-    
+def getValue(strat, opp_strat):
+    val = 0
+    for a1 in ACTIONS:
+        for a2 in ACTIONS:
+           val += strat[a1] * opp_strat[a2] * getPayoff(a1, a2)
+    return val
+
+
+def getStrategy(r):
+    rel = r - np.mean(r)  # I added this, not sure what the impact really is but it seemed
+                          # that the strategy should be computed using the mean adjusted regret
+    pos_regret = np.sum(np.maximum(rel, 0))
+    if pos_regret > 0:
+        return np.clip(rel, 0, None) / pos_regret
+    return np.ones(3) / 3
+
+
+def getPayoff(action, opp_action):
+    if action == opp_action:
+        return 0
+    if action == ROCK:
+        if opp_action == SCISSORS:
+            return 1
+        return -1
+    elif action == SCISSORS:
+        if opp_action == PAPER:
+            return 1
+        return -1
+    else:  # PAPER
+        if opp_action == ROCK:
+            return 1
+        return -1
+
+
+def getRegrets(payoff, opp_action):
+    return np.array([getPayoff(a, opp_action) - payoff for a in ACTIONS])
 
 if __name__ == '__main__':
     main()
